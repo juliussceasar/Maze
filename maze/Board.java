@@ -1,5 +1,7 @@
 package maze;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -7,31 +9,52 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class Board {
-    final int height;
-    final int width;
-    final int[][] board;
+    private final int height;
     final String WALL = "\u2588\u2588";
     final String EMPTY = "  ";
+    int[][] board;
     int nodesCnt;
+    static Board maze;
 
-    public Board(int height, int width) {
+    Board(int height) {
         this.height = height;
-        this.width = width;
-        board = new int[height][width];
-        nodesCnt = ((height - 1) / 2) * ((width - 1) / 2);
+        this.board = new int[height][height];
+        this.nodesCnt = ((height - 1) / 2) * ((height - 1) / 2);
         for (int[] row : board)
             Arrays.fill(row, 1);
     }
 
-    void printBoard() {
-        System.out.println();
+    Board(int[][] ints) {
+        this.height = ints.length;
+        this.board = ints;
+        this.nodesCnt = ((ints.length - 1) / 2) * ((ints.length - 1) / 2);
+    }
 
+    static Board getMaze(int height) {
+        if (maze == null) {
+            maze = new Board(height);
+        }
+        return maze;
+    }
+
+    void printBoard() {
         for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
+            for (int j = 0; j < height; j++) {
                 System.out.print(board[i][j] == 1 ? WALL : EMPTY);
             }
             System.out.println();
         }
+    }
+
+    void saveBoard(Writer writer) {
+        try {
+            for (int i = 0; i < height; i++) {
+                for (int j = 0; j < height; j++) {
+                    writer.write(board[i][j] == 1 ? WALL + "," : EMPTY + ",");
+                }
+                writer.write("\n");
+            }
+        } catch (IOException ignored) {}
     }
 
     public void setNode(int v, int h, ArrayList<Integer> directions) {
@@ -40,14 +63,13 @@ public class Board {
 
         while (nodesCnt * directions.size() > 0) {
             int dir = directions.remove(new Random().nextInt(directions.size()));
-//            debugBoard(v, h, dir, nodesCnt);  // TODO
             if (dir == 0 && h > 2 && board[v][h - 2] != 0) {
                 board[v][h - 1] = 0;
                 setNode(v, h - 2, new ArrayList<>(List.of(0, 1, 3)));
             } else if (dir == 1 && v > 2 && board[v - 2][h] != 0) {
                 board[v - 1][h] = 0;
                 setNode(v - 2, h, new ArrayList<>(List.of(0, 1, 2)));
-            } else if (dir == 2 && h < width - 3 && board[v][h + 2] != 0) {
+            } else if (dir == 2 && h < height - 3 && board[v][h + 2] != 0) {
                 board[v][h + 1] = 0;
                 setNode(v, h + 2, new ArrayList<>(List.of(1, 2, 3)));
             } else if (dir == 3 && v < height - 3 && board[v + 2][h] != 0) {
@@ -65,24 +87,12 @@ public class Board {
         };
 
         board[rnd.apply(1)][0] = 0;
-        if (width % 2 == 1) {
-            board[rnd.apply(width - 2)][width - 1] = 0;
+        if (height % 2 == 1) {
+            board[rnd.apply(height - 2)][height - 1] = 0;
         } else {
-            int v = rnd.apply(width - 3);
-            board[v][width - 2] = 0;
-            board[v][width - 1] = 0;
+            int v = rnd.apply(height - 3);
+            board[v][height - 2] = 0;
+            board[v][height - 1] = 0;
         }
     }
-
-//    private void debugBoard(int v, int h, int dir, int cnt) {
-//        printBoard();
-//        String showDir = dir == 0 ? "<" : dir == 1 ? "^" : dir == 2 ? ">" : "v";
-//        System.out.printf("(%d, %d) %s %d\n", v, h, showDir, cnt);
-//
-//        try {
-//            java.util.concurrent.TimeUnit.MILLISECONDS.sleep(1000);
-//        } catch (InterruptedException e) {
-//            throw new RuntimeException(e);
-//        }
-//    }
 }
